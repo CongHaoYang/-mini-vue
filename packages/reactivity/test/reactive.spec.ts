@@ -1,4 +1,4 @@
-import { reactive } from "../reactive";
+import { reactive, isReactive, isProxy } from "../reactive";
 
 describe("reactive", () => {
 
@@ -7,5 +7,23 @@ describe("reactive", () => {
         const observed = reactive(original);
         expect(observed).not.toBe(original);
         expect(observed.foo).toBe(1);
+        expect(isReactive(observed)).toBe(true);
+        expect(isReactive(original)).toBe(false);
+        expect(isProxy(observed)).toBe(true);
     }); 
+
+    it("nested reactive", () => {
+        const original = {
+            nested: {
+                foo: 1
+            },
+            array: [{
+                bar: 2
+            }]
+        };
+        const observe = reactive(original);
+        expect(isReactive(observe.nested)).toBe(true);
+        expect(isReactive(observe.array)).toBe(true);
+        expect(isReactive(observe.array[0])).toBe(true);
+    })
 })

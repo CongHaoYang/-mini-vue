@@ -50,12 +50,12 @@ describe("effect", () => {
         expect(dummy).toBe(1);
 
         obj.foo++;
-        // expect(schedular).toHaveBeenCalledTimes(1);
+        expect(schedular).toHaveBeenCalledTimes(1);
 
-        // expect(dummy).toBe(1);
+        expect(dummy).toBe(1);
 
-        // run();
-        // expect(dummy).toBe(2);
+        run();
+        expect(dummy).toBe(2);
 
 
     })

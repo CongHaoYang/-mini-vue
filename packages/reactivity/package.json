@@ -2,9 +2,12 @@
   "name": "reactivity",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "./lib/reactivity.cjs.js",
+  "module": "./lib/reactivity.esm.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "rollup -c rollup.config.js"
   },
   "keywords": [],
   "author": "",

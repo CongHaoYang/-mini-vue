@@ -32,7 +32,7 @@ export function shallowReadonly(raw) {
 }
 
 function createActiveObject(raw: any, baseHandlers) {
-    if (isObject(raw)) {
+    if (!isObject(raw)) {
         console.warn(`target ${raw}必须是一个对象`);
         return raw;
     }

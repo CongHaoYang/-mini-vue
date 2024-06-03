@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./lib/reactivity.cjs.js",
   "module": "./lib/reactivity.esm.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "test": "jest",
     "build": "rollup -c rollup.config.js"

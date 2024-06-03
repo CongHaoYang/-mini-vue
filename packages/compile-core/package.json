@@ -1,0 +1,24 @@
+{
+  "name": "compile-core",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "./lib/compile-core.cjs.js",
+  "module": "./lib/compile-core.esm.js",
+  "scripts": {
+    "test": "jest",
+    "build": "rollup -c rollup.config.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/core": "^7.24.5",
+    "@babel/preset-env": "^7.24.5",
+    "@babel/preset-typescript": "^7.24.1",
+    "@types/jest": "^29.5.12",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "shared": "workspace:^1.0.0"
+  }
+}

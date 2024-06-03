@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "reactivity": "workspace:^1.0.0",
     "runtime-core": "workspace:^1.0.0"
   }
 }

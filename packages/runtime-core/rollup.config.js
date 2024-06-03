@@ -6,11 +6,11 @@ export default {
     output: [
         {
             format: "cjs",
-            file: "lib/guide-mini-vue.cjs.js"
+            file: "lib/runtime-core.cjs.js"
         },
         {
             format: "es",
-            file: "lib/guide-mini-vue.esm.js"
+            file: "lib/runtime-core.esm.js"
         },
     ],
     plugins: [

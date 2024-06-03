@@ -3,16 +3,20 @@ import { initProps } from "./componentProps";
 import { initSlots } from "./componentSlots";
 import { shallowReadonly } from "reactivity";
 import { emit } from "./componentEmit";
+import { proxyRefs } from "reactivity";
 
 export function createComponentInstance(vnode, parent) {
     const component = {
         vnode,
         type: vnode.type,
         setupState: {},
+        next: null,
         props: {},
         slots: {},
         provides: {},
         parent: parent ? parent.provides : {},
+        isMounted: false,
+        subTree: {},
         emit: () => {}
     }
 
@@ -53,7 +57,7 @@ function setupStatefulComponent(instance: any) {
 function handleSetupResult(instance, setupResult: any) {
     // todo function
     if (typeof setupResult === "object") {
-        instance.setupState = setupResult;
+        instance.setupState = proxyRefs(setupResult);
     }
 
     finishComponentSetup(instance);
@@ -61,6 +65,12 @@ function handleSetupResult(instance, setupResult: any) {
 
 function finishComponentSetup(instance) {
     const Component = instance.type;
+
+    if (compiler && !Component.render) {
+        if (Component.template) {
+            Component.render = compiler(Component.template);
+        }
+    }
 
     if (Component.render) {
         instance.render = Component.render;
@@ -76,4 +86,10 @@ export function getCurrentInstance() {
 function setCurrentInstance(instance) {
     // 中间层的概念，后续如果出现错误，只要调查这个就可以
     currentInstance = instance;
+}
+
+let compiler;
+
+export function registerRuntimeCompiler(_compiler) {
+    compiler = _compiler;
 }

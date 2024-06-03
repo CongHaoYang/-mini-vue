@@ -6,31 +6,104 @@ const isObject = (val) => {
     return val !== null && typeof val === "object";
 };
 
-var targetMap = new Map();
-function trigger(target, key) {
-    var depsMap = targetMap.get(target);
-    var dep = depsMap.get(key);
-    triggerEffects(dep);
-}
-function triggerEffects(dep) {
-    for (var _i = 0, dep_1 = dep; _i < dep_1.length; _i++) {
-        var effect_1 = dep_1[_i];
-        if (effect_1.schedular) {
-            effect_1.schedular();
+const hasChanged = (val, newVal) => {
+    return !Object.is(val, newVal);
+};
+
+let activeEffect;
+let shouldTrack = false;
+class ReactiveEffect {
+    constructor(fn, scheduler) {
+        this.scheduler = scheduler;
+        this.deps = [];
+        this.active = true;
+        this._fn = fn;
+    }
+    run() {
+        if (!this.active) {
+            return this._fn();
         }
-        else {
-            effect_1.run();
+        shouldTrack = true;
+        activeEffect = this;
+        const result = this._fn();
+        shouldTrack = false;
+        activeEffect = undefined;
+        return result;
+    }
+    stop() {
+        if (this.active) {
+            cleanupEffect(this);
+            if (this.onStop) {
+                this.onStop();
+            }
+            this.active = false;
         }
     }
 }
+function cleanupEffect(effect) {
+    effect.deps.forEach((dep) => {
+        dep.delete(effect);
+    });
+}
+const targetMap = new Map();
+function track(target, key) {
+    if (!isTracking())
+        return;
+    // target -> key -> dep
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+        depsMap = new Map();
+        targetMap.set(target, depsMap);
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+        dep = new Set();
+        depsMap.set(key, dep);
+    }
+    trackEffects(dep);
+}
+function trackEffects(dep) {
+    if (dep.has(activeEffect))
+        return;
+    dep.add(activeEffect);
+    activeEffect.deps.push(dep);
+}
+function isTracking() {
+    return shouldTrack && activeEffect !== undefined;
+}
+function trigger(target, key) {
+    let depsMap = targetMap.get(target);
+    let dep = depsMap.get(key);
+    triggerEffects(dep);
+}
+function triggerEffects(dep) {
+    for (const effect of dep) {
+        if (effect.schedular) {
+            effect.schedular();
+        }
+        else {
+            effect.run();
+        }
+    }
+}
+function effect(fn, options = {}) {
+    // fn
+    const schedular = options.schedular;
+    const _effect = new ReactiveEffect(fn, schedular);
+    extend(_effect, options);
+    // Object.assign(_effect, options);
+    // _effect.onStop = options.onStop;
+    _effect.run();
+    const runner = _effect.run.bind(_effect);
+    runner.effect = _effect;
+    return runner;
+}
 
-var get = createGetter();
-var set = createSetter();
-var readonlyGet = createGetter(true);
-var shallowReadonly$1 = createGetter(true, true);
-function createGetter(isReadonly, shallow) {
-    if (isReadonly === void 0) { isReadonly = false; }
-    if (shallow === void 0) { shallow = false; }
+const get = createGetter();
+const set = createSetter();
+const readonlyGet = createGetter(true);
+const shallowReadonly$1 = createGetter(true, true);
+function createGetter(isReadonly = false, shallow = false) {
     return function get(target, key) {
         if (key === "__v_isReactive" /* IS_REACTIVE */) {
             return !isReadonly;
@@ -38,7 +111,10 @@ function createGetter(isReadonly, shallow) {
         if (key === "__v_isReadonly" /* IS_READONLY */) {
             return isReadonly;
         }
-        var res = Reflect.get(target, key);
+        const res = Reflect.get(target, key);
+        if (!isReadonly) {
+            track(target, key);
+        }
         if (shallow) {
             return res;
         }
@@ -50,23 +126,23 @@ function createGetter(isReadonly, shallow) {
 }
 function createSetter() {
     return function set(target, key, value) {
-        var res = Reflect.set(target, key, value);
+        const res = Reflect.set(target, key, value);
         trigger(target, key);
         return res;
     };
 }
-var mutableHandlers = {
-    get: get,
-    set: set,
+const mutableHandlers = {
+    get,
+    set,
 };
-var readonlyHandlers = {
+const readonlyHandlers = {
     get: readonlyGet,
-    set: function (target, key, value) {
-        console.warn("key: " + key + " set \u5931\u8D25 \u56E0\u4E3A target \u662F readonly", target);
+    set: (target, key, value) => {
+        console.warn(`key: ${key} set 失败 因为 target 是 readonly`, target);
         return true;
     }
 };
-var shallowReadonlyHandlers = extend({}, readonlyHandlers, {
+const shallowReadonlyHandlers = extend({}, readonlyHandlers, {
     get: shallowReadonly$1
 });
 
@@ -80,11 +156,67 @@ function shallowReadonly(raw) {
     return createActiveObject(raw, shallowReadonlyHandlers);
 }
 function createActiveObject(raw, baseHandlers) {
-    if (isObject(raw)) {
-        console.warn("target " + raw + "\u5FC5\u987B\u662F\u4E00\u4E2A\u5BF9\u8C61");
+    if (!isObject(raw)) {
+        console.warn(`target ${raw}必须是一个对象`);
         return raw;
     }
     return new Proxy(raw, baseHandlers);
 }
 
+class refImpl {
+    constructor(value) {
+        this.__v_isRef = true;
+        this._rawValue = value;
+        this._value = convert(value);
+        this.dep = new Set();
+    }
+    get value() {
+        trackRefValue(this);
+        return this._value;
+    }
+    set value(newVal) {
+        if (hasChanged(newVal, this._rawValue)) {
+            this._rawValue = newVal;
+            this._value = convert(newVal);
+            triggerEffects(this.dep);
+        }
+    }
+}
+function convert(value) {
+    return isObject(value) ? reactive(value) : value;
+}
+function trackRefValue(ref) {
+    if (isTracking()) {
+        trackEffects(ref.dep);
+    }
+}
+function ref(value) {
+    return new refImpl(value);
+}
+function isRef(ref) {
+    return !!ref.__v_isRef;
+}
+function unRef(ref) {
+    return isRef(ref) ? ref.value : ref;
+}
+function proxyRefs(objectWithRefs) {
+    return new Proxy(objectWithRefs, {
+        get(target, key) {
+            return unRef(Reflect.get(target, key));
+        },
+        set(target, key, value) {
+            // 之前不是ref
+            if (isRef(target[key]) && !isRef(value)) {
+                return target[key].value = value;
+            }
+            else {
+                return Reflect.set(target, key, value);
+            }
+        }
+    });
+}
+
+exports.effect = effect;
+exports.proxyRefs = proxyRefs;
+exports.ref = ref;
 exports.shallowReadonly = shallowReadonly;

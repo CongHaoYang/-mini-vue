@@ -3,8 +3,8 @@
   "type": "module",
   "version": "1.0.0",
   "description": "",
-  "main": "./lib/guide-mini-vue.cjs.js",
-  "module": "./lib/guide-mini-vue.esm.js",
+  "main": "./lib/runtime-core.cjs.js",
+  "module": "./lib/runtime-core.esm.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c rollup.config.js"

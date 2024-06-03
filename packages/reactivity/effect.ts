@@ -1,7 +1,7 @@
 import { extend } from "shared";
 
 let activeEffect;
-let shouldTrack;
+let shouldTrack = false;
 
 export class ReactiveEffect {
     private _fn: any;
@@ -25,6 +25,7 @@ export class ReactiveEffect {
         const result = this._fn();
 
         shouldTrack = false;
+        activeEffect = undefined;
 
         return result;
     }

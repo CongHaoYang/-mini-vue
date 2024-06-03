@@ -26,6 +26,24 @@ importers:
       rollup: 4.17.2
       tslib: 2.6.2
 
+  packages/compile-core:
+    specifiers:
+      '@babel/core': ^7.24.5
+      '@babel/preset-env': ^7.24.5
+      '@babel/preset-typescript': ^7.24.1
+      '@types/jest': ^29.5.12
+      babel-jest: ^29.7.0
+      jest: ^29.7.0
+      shared: workspace:^1.0.0
+    dependencies:
+      '@babel/core': 7.24.5
+      '@babel/preset-env': 7.24.5_@babel+core@7.24.5
+      '@babel/preset-typescript': 7.24.1_@babel+core@7.24.5
+      '@types/jest': 29.5.12
+      babel-jest: 29.7.0_@babel+core@7.24.5
+      jest: 29.7.0
+      shared: link:../shared
+
   packages/reactivity:
     specifiers:
       '@babel/core': ^7.24.5
@@ -55,12 +73,26 @@ importers:
 
   packages/runtime-dom:
     specifiers:
+      reactivity: workspace:^1.0.0
       runtime-core: workspace:^1.0.0
     dependencies:
+      reactivity: link:../reactivity
       runtime-core: link:../runtime-core
 
   packages/shared:
     specifiers: {}
+
+  packages/vue:
+    specifiers:
+      compile-core: workspace:^1.0.0
+      reactivity: workspace:^1.0.0
+      runtime-core: workspace:^1.0.0
+      runtime-dom: workspace:^1.0.0
+    dependencies:
+      compile-core: link:../compile-core
+      reactivity: link:../reactivity
+      runtime-core: link:../runtime-core
+      runtime-dom: link:../runtime-dom
 
 packages:
 
